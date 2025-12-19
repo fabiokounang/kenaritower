@@ -1,5 +1,5 @@
 (() => {
-  const API_BASE = "https://cms.kenaritower.com/";
+  const API_BASE = "https://cms.kenaritower.com";
   const ENDPOINT = `${API_BASE}/api/site-content`;
 
   const resolveAssetUrl = (path) => {
