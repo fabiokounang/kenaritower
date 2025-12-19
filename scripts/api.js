@@ -1,73 +1,315 @@
 (() => {
-  const API_BASE = window.CMS_API_BASE || ''; 
-  // contoh kalau beda domain:
-  // window.CMS_API_BASE = 'https://cms.kenaritower.com';
+  const API_BASE = "http://localhost:3000";
+  const ENDPOINT = `${API_BASE}/api/site-content`;
 
-  async function getJSON(url) {
-    const res = await fetch(API_BASE + url, { method: 'GET' });
-    if (!res.ok) throw new Error('Failed fetch ' + url);
-    return res.json();
-  }
+  const resolveAssetUrl = (path) => {
+    if (!path) return "";
+    // kalau sudah absolute (http/https), langsung pakai
+    if (/^https?:\/\//i.test(path)) return path;
+    // pastikan cuma satu slash
+    return `${API_BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  };
 
-  async function loadSettings() {
-    const s = await getJSON('/api/public/settings');
+  // ---------- helpers ----------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-    // navbar / footer
-    setText('hotelNameNav', s.hotelName);
-    setText('footerHotelName', s.hotelName);
-
-    setText('contactPhone', s.phone);
-    setText('footerPhone', `Phone: ${s.phone}`);
-
-    setText('contactEmail', s.email);
-    setText('footerEmail', `Email: ${s.email}`);
-
-    setText('hotelAddress', s.address);
-    setText('footerAddress', s.address);
-
-    // whatsapp button
-    const wa = document.querySelector('.whatsapp-btn');
-    if (wa && s.whatsapp) {
-      wa.href = `https://wa.me/${s.whatsapp}`;
-    }
-
-    // map
-    const iframe = document.querySelector('#location iframe');
-    if (iframe && s.mapsEmbedUrl) {
-      iframe.src = s.mapsEmbedUrl;
-    }
-  }
-
-  async function loadContent(lang = 'en') {
-    const c = await getJSON(`/api/public/content?lang=${lang}`);
-
-    // HERO
-    setText('heroHeadline', c?.hero?.headline);
-    setText('heroTagline', c?.hero?.tagline);
-
-    // ABOUT
-    setText('aboutTitle', c?.about?.title);
-    setText('aboutDescription', c?.about?.description);
-  }
-
-  // helpers
-  function setText(id, value) {
-    if (!value) return;
+  const setTextById = (id, value) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  }
+    if (!el) {
+      console.warn(`[render] missing element id="${id}"`);
+      return;
+    }
+    el.textContent = value ?? "";
+  };
 
-  // expose for language switch
-  window.KenariCMS = {
-    load: async (lang) => {
-      await loadSettings();
-      await loadContent(lang);
+  const setText = (el, value) => {
+    if (!el) return;
+    el.textContent = value ?? "";
+  };
+
+  const safeSetImg = (imgEl, url, alt) => {
+    const urlApi = resolveAssetUrl(url);
+    if (!imgEl) return;
+    if (!url) {
+      imgEl.src = "";
+      imgEl.alt = "Image failed to load";
+      imgEl.style.display = "none";
+      return;
+    }
+    imgEl.style.display = "";
+    imgEl.src = urlApi;
+    imgEl.alt = alt || "";
+    imgEl.onerror = () => {
+      imgEl.src = "";
+      imgEl.alt = "Image failed to load";
+      imgEl.style.display = "none";
+    };
+  };
+
+  const setMapIframeSrc = (src) => {
+    console.log(src)
+    const iframe = $("#location .map-container iframe");
+    if (!iframe) return;
+    if (src) iframe.src = src;
+  };
+
+  const setWhatsAppLink = (whatsappNumber) => {
+    const wa = $(".whatsapp-btn");
+    if (!wa) return;
+    if (!whatsappNumber) return;
+    wa.href = `https://wa.me/${String(whatsappNumber).replace(/\D/g, "")}`;
+  };
+
+  // ---------- renderers ----------
+  const renderHero = (hero, home) => {
+    if (!hero) return;
+    if (!home) return;
+    setTextById("heroHeadline", home.heroTitle);
+    setTextById("heroTagline", home.heroSubtitle);
+
+    // Update carousel images (reuse existing slides)
+    const slides = $$(".hero-section .carousel .carousel-slide img");
+    const imgs = Array.isArray(hero.images) ? hero.images : [];
+
+    slides.forEach((imgEl, idx) => {
+      const item = imgs[idx];
+      safeSetImg(imgEl, item?.imageUrl, item?.alt);
+    });
+
+    // If backend gives more images than existing slides, optionally append (still same design/classes)
+    const carousel = $(".hero-section .carousel");
+    if (carousel && imgs.length > slides.length) {
+      for (let i = slides.length; i < imgs.length; i++) {
+        const slide = document.createElement("div");
+        slide.className = "carousel-slide";
+        const img = document.createElement("img");
+        safeSetImg(img, imgs[i]?.imageUrl, imgs[i]?.alt);
+        slide.appendChild(img);
+        carousel.appendChild(slide);
+      }
     }
   };
 
-  // default load
-  document.addEventListener('DOMContentLoaded', () => {
-    window.KenariCMS.load('en');
-  });
+  const renderAbout = (about) => {
+    if (!about) return;
 
+    // heading: ".about-text h3" (no id in your HTML)
+    const h3 = $("#about .about-text h3");
+    if (h3 && about.heading) setText(h3, about.heading);
+
+    // paragraphs: ".about-text p" (first one already has id=aboutDescription)
+    const ps = $$("#about .about-text p");
+    const paragraphs = Array.isArray(about.paragraphs) ? about.paragraphs : [];
+
+    if (paragraphs.length && ps.length) {
+      // keep number of <p> same; just fill as much as we can
+      for (let i = 0; i < ps.length; i++) {
+        if (paragraphs[i] != null) ps[i].textContent = paragraphs[i];
+      }
+    } else if (about.description) {
+      // fallback
+      setTextById("aboutDescription", about.description);
+    }
+
+    // about image
+    const imgEl = $("#about .about-image img");
+    safeSetImg(imgEl, about?.imageUrl, about?.alt);
+  };
+
+  const renderGallery = (items) => {
+    if (!Array.isArray(items)) return;
+    const grid = $("#gallery .gallery-grid");
+    if (!grid) return;
+
+    grid.innerHTML = ""; // rebuild items without touching CSS
+
+    for (const it of items) {
+      const wrap = document.createElement("div");
+      wrap.className = "gallery-item";
+
+      const img = document.createElement("img");
+      safeSetImg(img, it?.imageUrl, it?.alt);
+
+      const overlay = document.createElement("div");
+      overlay.className = "gallery-overlay";
+      overlay.textContent = it?.label ?? "";
+
+      wrap.appendChild(img);
+      wrap.appendChild(overlay);
+      grid.appendChild(wrap);
+    }
+  };
+
+  const renderFacilities = (items) => {
+    if (!Array.isArray(items)) return;
+    const grid = $("#facilities .facilities-grid");
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    for (const it of items) {
+      const card = document.createElement("div");
+      card.className = "facility-card";
+
+      const icon = document.createElement("div");
+      icon.className = "facility-icon";
+      icon.textContent = it?.icon ?? "";
+
+      const h3 = document.createElement("h3");
+      h3.textContent = it?.title ?? "";
+
+      const p = document.createElement("p");
+      p.textContent = it?.subtitle ?? "";
+
+      card.appendChild(icon);
+      card.appendChild(h3);
+      card.appendChild(p);
+      grid.appendChild(card);
+    }
+  };
+
+  const renderServices = (items) => {
+    const grid = document.querySelector("#services .services-grid");
+
+    if (!grid) return;
+
+    const arr = Array.isArray(items) ? items : [];
+    grid.innerHTML = "";
+
+    for (const it of arr) {
+      const card = document.createElement("div");
+      card.className = "service-card";
+
+      const h3 = document.createElement("h3");
+      h3.textContent = it?.title ?? "";
+
+      const p = document.createElement("p");
+      p.textContent = it?.description ?? "";
+
+      card.appendChild(h3);
+      card.appendChild(p);
+      grid.appendChild(card);
+    }
+
+    requestAnimationFrame(() => {
+      grid.querySelectorAll(".service-card").forEach((el) => el.classList.add("visible"));
+    });
+  };
+
+
+  const renderLocation = (loc) => {
+    if (!loc) return;
+
+    // heading h3
+    const h3 = $("#location .location-info h3");
+    if (h3 && loc.tagline) h3.textContent = loc.tagline;
+
+    // address id exists
+    if (loc.address) setTextById("hotelAddress", loc.address);
+
+    // description title/desc (they are plain <p><strong>... and <p>... without ids)
+    const info = $("#location .location-info");
+    if (info) {
+      const p = document.getElementsByClassName("strategic");
+      p[0].innerHTML = "";
+      p[0].textContent = loc.footerAbout;
+    }
+
+    setMapIframeSrc(loc.mapsEmbedUrl);
+  };
+
+  const renderContact = (c) => {
+    if (!c) return;
+
+    // section title h2
+    const h2 = $("#contact .section-title");
+    if (h2 && c.title) h2.textContent = c.title;
+
+    // heading h3
+    const h3 = $("#contact .contact-info h3");
+    if (h3 && c.heading) h3.textContent = c.heading;
+
+    if (c.phone) setTextById("contactPhone", c.phone);
+    if (c.email) setTextById("contactEmail", c.email);
+
+    // Front desk hours: third contact-item is hardcoded "24 Hours Daily"
+    if (c.frontDeskHours) {
+      const hoursP = $$("#contact .contact-item p").find(p => p.textContent.trim() === "24 Hours Daily");
+      if (hoursP) hoursP.textContent = c.frontDeskHours;
+    }
+
+    // blurb paragraph (the long paragraph at bottom)
+    if (c.blurb) {
+      const blurbP = $("#contact .contact-info p[style*='margin-top']");
+      if (blurbP) blurbP.textContent = c.blurb;
+    }
+
+    setWhatsAppLink(c.whatsappNumber);
+  };
+
+  // const renderFooter = (data) => {
+  //   if (!data) return;
+
+  //   // hotel name in nav + footer
+  //   if (data.hotelName) {
+  //     setTextById("hotelNameNav", data.hotelName);
+  //     setTextById("footerHotelName", data.hotelName);
+  //   }
+
+  //   // footer about text (first footer-section paragraph)
+  //   const footerAboutP = $("footer .footer-section p");
+  //   if (footerAboutP && data.footer?.aboutText) footerAboutP.textContent = data.footer.aboutText;
+
+  //   if (data.footer?.phone) setTextById("footerPhone", `Phone: ${data.footer.phone}`);
+  //   if (data.footer?.email) setTextById("footerEmail", `Email: ${data.footer.email}`);
+
+  //   // address lines -> keep <br> formatting (no CSS change)
+  //   const addrEl = document.getElementById("footerAddress");
+  //   if (addrEl && Array.isArray(data.footer?.addressLines)) {
+  //     addrEl.innerHTML = ""; // controlled insert
+  //     data.footer.addressLines.forEach((line, idx) => {
+  //       const span = document.createElement("span");
+  //       span.textContent = line ?? "";
+  //       addrEl.appendChild(span);
+  //       if (idx !== data.footer.addressLines.length - 1) addrEl.appendChild(document.createElement("br"));
+  //     });
+  //   }
+
+  //   // copyright
+  //   const copyP = $("footer .footer-bottom p");
+  //   if (copyP && data.footer?.copyright) copyP.textContent = data.footer.copyright;
+  // };
+
+  // ---------- main fetch ----------
+  async function loadContent() {
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { data } = await res.json();
+
+      // render sections
+      renderHero(data.hero, data.home);
+      renderAbout(data.about);
+      renderGallery(data.gallery);
+      renderFacilities(data.facilities);
+      renderServices(data.services);
+      renderLocation(data.site);
+      renderContact(data.contact);
+      // renderFooter(data);
+
+      // If your carousel logic depends on slides count, re-init it here if needed:
+      // if (typeof window.initCarousel === "function") window.initCarousel();
+
+    } catch (err) {
+      console.error("[loadContent] failed:", err);
+      // Optional: show fallback UI without breaking design
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadContent);
 })();

@@ -1,23 +1,14 @@
-const defaultConfig = {
-  hotel_name: "Kenari Tower Hotel",
-  hero_headline: "Welcome to Kenari Tower Hotel",
-  hero_tagline: "Your Home Away From Home in Makassar",
-  about_title: "About Us",
-  about_description: "Kenari Tower Hotel is a premier destination for travelers seeking comfort, elegance, and exceptional hospitality in the heart of Makassar. Located in the vibrant center of the city, we offer modern facilities combined with warm Indonesian service.",
-  contact_phone: "+62 411 123 4567",
-  contact_email: "info@kenaritower.com",
-  hotel_address: "Jl. Sultan Hasanuddin No. 10, Makassar, South Sulawesi 90111, Indonesia"
-};
+
 
 async function onConfigChange(config) {
-  const hotelName = config.hotel_name || defaultConfig.hotel_name;
-  const heroHeadline = config.hero_headline || defaultConfig.hero_headline;
-  const heroTagline = config.hero_tagline || defaultConfig.hero_tagline;
-  const aboutTitle = config.about_title || defaultConfig.about_title;
-  const aboutDescription = config.about_description || defaultConfig.about_description;
-  const contactPhone = config.contact_phone || defaultConfig.contact_phone;
-  const contactEmail = config.contact_email || defaultConfig.contact_email;
-  const hotelAddress = config.hotel_address || defaultConfig.hotel_address;
+  const hotelName = config.hotel_name;
+  const heroHeadline = config.hero_headline;
+  const heroTagline = config.hero_tagline;
+  const aboutTitle = config.about_title;
+  const aboutDescription = config.about_description;
+  const contactPhone = config.contact_phone;
+  const contactEmail = config.contact_email;
+  const hotelAddress = config.hotel_address;
 
   document.getElementById('hotelNameNav').textContent = hotelName;
   document.getElementById('heroHeadline').textContent = heroHeadline;
@@ -47,14 +38,14 @@ if (window.elementSdk) {
       fontSizeable: undefined
     }),
     mapToEditPanelValues: (config) => new Map([
-      ["hotel_name", config.hotel_name || defaultConfig.hotel_name],
-      ["hero_headline", config.hero_headline || defaultConfig.hero_headline],
-      ["hero_tagline", config.hero_tagline || defaultConfig.hero_tagline],
-      ["about_title", config.about_title || defaultConfig.about_title],
-      ["about_description", config.about_description || defaultConfig.about_description],
-      ["contact_phone", config.contact_phone || defaultConfig.contact_phone],
-      ["contact_email", config.contact_email || defaultConfig.contact_email],
-      ["hotel_address", config.hotel_address || defaultConfig.hotel_address]
+      ["hotel_name", config.hotel_name],
+      ["hero_headline", config.hero_headline],
+      ["hero_tagline", config.hero_tagline],
+      ["about_title", config.about_title],
+      ["about_description", config.about_description],
+      ["contact_phone", config.contact_phone],
+      ["contact_email", config.contact_email],
+      ["hotel_address", config.hotel_address]
     ])
   });
 }
