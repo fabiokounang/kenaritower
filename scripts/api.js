@@ -1,5 +1,5 @@
 (() => {
-  const API_BASE = "http://localhost:3000";
+  const API_BASE = "https://cms.kenaritower.com/";
   const ENDPOINT = `${API_BASE}/api/site-content`;
 
   const resolveAssetUrl = (path) => {
