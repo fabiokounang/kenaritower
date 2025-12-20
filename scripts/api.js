@@ -48,7 +48,6 @@
   };
 
   const setMapIframeSrc = (src) => {
-    console.log(src)
     const iframe = $("#location .map-container iframe");
     if (!iframe) return;
     if (src) iframe.src = src;
@@ -197,7 +196,6 @@
     });
   };
 
-
   const renderLocation = (loc) => {
     if (!loc) return;
 
@@ -248,38 +246,36 @@
     setWhatsAppLink(c.whatsappNumber);
   };
 
-  // const renderFooter = (data) => {
-  //   if (!data) return;
+  const renderFooter = (data) => {
+    if (!data) return;
 
-  //   // hotel name in nav + footer
-  //   if (data.hotelName) {
-  //     setTextById("hotelNameNav", data.hotelName);
-  //     setTextById("footerHotelName", data.hotelName);
-  //   }
+    // // hotel name in nav + footer
+    // if (data.hotelName) {
+    //   setTextById("hotelNameNav", data.hotelName);
+    //   setTextById("footerHotelName", data.hotelName);
+    // }
 
-  //   // footer about text (first footer-section paragraph)
-  //   const footerAboutP = $("footer .footer-section p");
-  //   if (footerAboutP && data.footer?.aboutText) footerAboutP.textContent = data.footer.aboutText;
+    // // footer about text (first footer-section paragraph)
+    // const footerAboutP = $("footer .footer-section p");
+    // if (footerAboutP && data.footer?.aboutText) footerAboutP.textContent = data.footer.aboutText;
 
-  //   if (data.footer?.phone) setTextById("footerPhone", `Phone: ${data.footer.phone}`);
-  //   if (data.footer?.email) setTextById("footerEmail", `Email: ${data.footer.email}`);
+    // if (data.footer?.phone) setTextById("footerPhone", `Phone: ${data.footer.phone}`);
+    // if (data.footer?.email) setTextById("footerEmail", `Email: ${data.footer.email}`);
 
-  //   // address lines -> keep <br> formatting (no CSS change)
-  //   const addrEl = document.getElementById("footerAddress");
-  //   if (addrEl && Array.isArray(data.footer?.addressLines)) {
-  //     addrEl.innerHTML = ""; // controlled insert
-  //     data.footer.addressLines.forEach((line, idx) => {
-  //       const span = document.createElement("span");
-  //       span.textContent = line ?? "";
-  //       addrEl.appendChild(span);
-  //       if (idx !== data.footer.addressLines.length - 1) addrEl.appendChild(document.createElement("br"));
-  //     });
-  //   }
+    // address lines -> keep <br> formatting (no CSS change)
+    const addrEl = document.getElementById("footerAddress");
+    if (addrEl && data.address) {
+      addrEl.innerHTML = ""; // controlled insert
+      const span = document.createElement("span");
+      addrEl.appendChild(span);
+      addrEl.appendChild(document.createElement("br"));
+      span.textContent = data.address;
+    }
 
-  //   // copyright
-  //   const copyP = $("footer .footer-bottom p");
-  //   if (copyP && data.footer?.copyright) copyP.textContent = data.footer.copyright;
-  // };
+    // copyright
+    // const copyP = $("footer .footer-bottom p");
+    // if (copyP && data.footer?.copyright) copyP.textContent = data.footer.copyright;
+  };
 
   // ---------- main fetch ----------
   async function loadContent() {
@@ -300,7 +296,7 @@
       renderServices(data.services);
       renderLocation(data.site);
       renderContact(data.contact);
-      // renderFooter(data);
+      renderFooter(data.site);
 
       // If your carousel logic depends on slides count, re-init it here if needed:
       // if (typeof window.initCarousel === "function") window.initCarousel();
