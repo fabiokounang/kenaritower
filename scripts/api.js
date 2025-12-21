@@ -2,7 +2,7 @@
   const API_BASE = "https://cms.kenaritower.com";
   const ENDPOINT = `${API_BASE}/api/site-content`;
 
-  const toAssetUrl = (u) => {
+  const resolveAssetUrl = (u) => {
     if (!u) return "";
     // already absolute
     if (/^https?:\/\//i.test(u)) return u;
@@ -10,14 +10,6 @@
     // if starts with /uploads... or uploads...
     const path = u.startsWith("/") ? u : `/${u}`;
     return `${API_BASE}${path}`;
-  };
-
-  const resolveAssetUrl = (path) => {
-    if (!path) return "";
-    // kalau sudah absolute (http/https), langsung pakai
-    if (/^https?:\/\//i.test(path)) return path;
-    // pastikan cuma satu slash
-    return `${API_BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   };
 
   // ---------- helpers ----------
@@ -138,7 +130,7 @@
       const wrap = document.createElement("div");
       wrap.className = "gallery-item";
 
-      const fullUrl = toAssetUrl(it?.imageUrl);
+      const fullUrl = resolveAssetUrl(it?.imageUrl);
 
       const a = document.createElement("a");
       a.href = fullUrl;
