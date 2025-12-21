@@ -2,8 +2,6 @@
   const API_BASE = "https://cms.kenaritower.com";
   const ENDPOINT = `${API_BASE}/api/site-content`;
 
-  const CMS_BASE = "https://cms.kenaritower.com"; // ganti sesuai domain file server kamu
-
   const toAssetUrl = (u) => {
     if (!u) return "";
     // already absolute
@@ -11,7 +9,7 @@
 
     // if starts with /uploads... or uploads...
     const path = u.startsWith("/") ? u : `/${u}`;
-    return `${CMS_BASE}${path}`;
+    return `${API_BASE}${path}`;
   };
 
   const resolveAssetUrl = (path) => {
