@@ -135,7 +135,10 @@
       const a = document.createElement("a");
       a.href = fullUrl;
       a.setAttribute("data-lightbox", "hotel-gallery");
-      a.setAttribute("data-title", it?.title ?? "");
+      a.setAttribute(
+        "data-title",
+        `<strong>${it?.title ?? ""}</strong><br>${it?.description ?? ""}`
+      );
 
       const img = document.createElement("img");
       safeSetImg(img, fullUrl, it?.alt);
