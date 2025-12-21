@@ -2,6 +2,18 @@
   const API_BASE = "https://cms.kenaritower.com";
   const ENDPOINT = `${API_BASE}/api/site-content`;
 
+  const CMS_BASE = "https://cms.kenaritower.com"; // ganti sesuai domain file server kamu
+
+  const toAssetUrl = (u) => {
+    if (!u) return "";
+    // already absolute
+    if (/^https?:\/\//i.test(u)) return u;
+
+    // if starts with /uploads... or uploads...
+    const path = u.startsWith("/") ? u : `/${u}`;
+    return `${CMS_BASE}${path}`;
+  };
+
   const resolveAssetUrl = (path) => {
     if (!path) return "";
     // kalau sudah absolute (http/https), langsung pakai
@@ -128,26 +140,27 @@
       const wrap = document.createElement("div");
       wrap.className = "gallery-item";
 
-      // Anchor for Lightbox2
+      const fullUrl = toAssetUrl(it?.imageUrl);
+
       const a = document.createElement("a");
-      a.href = it?.imageUrl || "";            // big image
-      a.setAttribute("data-lightbox", "hotel-gallery"); // group name
-      a.setAttribute("data-title", it?.title || "");    // caption (optional)
+      a.href = fullUrl;
+      a.setAttribute("data-lightbox", "hotel-gallery");
+      a.setAttribute("data-title", it?.title ?? "");
 
       const img = document.createElement("img");
-      safeSetImg(img, it?.imageUrl, it?.alt);
-
-      // Put img inside anchor (Lightbox2 requirement)
-      a.appendChild(img);
+      safeSetImg(img, fullUrl, it?.alt);
 
       const overlay = document.createElement("div");
       overlay.className = "gallery-overlay";
       overlay.textContent = it?.title ?? "";
 
+      a.appendChild(img);
       wrap.appendChild(a);
       wrap.appendChild(overlay);
       grid.appendChild(wrap);
     }
+
+    if (window.lightbox?.init) window.lightbox.init();
   };
 
   const renderFacilities = (items) => {
