@@ -118,23 +118,33 @@
 
   const renderGallery = (items) => {
     if (!Array.isArray(items)) return;
+
     const grid = $("#gallery .gallery-grid");
     if (!grid) return;
 
-    grid.innerHTML = ""; // rebuild items without touching CSS
+    grid.innerHTML = "";
 
     for (const it of items) {
       const wrap = document.createElement("div");
       wrap.className = "gallery-item";
 
+      // Anchor for Lightbox2
+      const a = document.createElement("a");
+      a.href = it?.imageUrl || "";            // big image
+      a.setAttribute("data-lightbox", "hotel-gallery"); // group name
+      a.setAttribute("data-title", it?.title || "");    // caption (optional)
+
       const img = document.createElement("img");
       safeSetImg(img, it?.imageUrl, it?.alt);
 
+      // Put img inside anchor (Lightbox2 requirement)
+      a.appendChild(img);
+
       const overlay = document.createElement("div");
       overlay.className = "gallery-overlay";
-      overlay.textContent = it?.label ?? "";
+      overlay.textContent = it?.title ?? "";
 
-      wrap.appendChild(img);
+      wrap.appendChild(a);
       wrap.appendChild(overlay);
       grid.appendChild(wrap);
     }
